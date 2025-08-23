@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Reporting Tool</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .drop-zone {
+      border: 2px dashed #dee2e6;
+      border-radius: 0.375rem;
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .drop-zone:hover {
+      border-color: #0d6efd;
+      background-color: #f8f9fa;
+    }
+    
+    .drop-zone.dragover {
+      border-color: #0d6efd !important;
+      background-color: #f8f9fa !important;
+    }
+    
+    @media print {
+      .no-print { display: none !important; }
+      .container { max-width: none !important; }
+    }
+    
+    body { 
+      font-size: 14px; 
+      background-color: #f8f9fa;
+    }
+    
+    .main-container {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .upload-section {
+      background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+      color: white;
+      border-radius: 0.5rem 0.5rem 0 0;
+    }
+    
+    .card-title { 
+      font-size: 1.1rem; 
+    }
+    
+    .btn-file {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-file input[type=file] {
+      position: absolute;
+      top: 0;
+      right: 0;
+      min-width: 100%;
+      min-height: 100%;
+      font-size: 100px;
+      text-align: right;
+      filter: alpha(opacity=0);
+      opacity: 0;
+      outline: none;
+      background: white;
+      cursor: inherit;
+      display: block;
+    }
+    
+    .feature-list {
+      font-size: 0.9rem;
+    }
+    
+    .feature-list li {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid py-4">
+    <div class="container">
+      <div class="main-container">
+        <!-- Header Section -->
+        <div class="upload-section p-4">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h1 class="mb-3">Financial Reporting Tool</h1>
+              <p class="mb-0 lead">Process CSV transaction data to generate comprehensive expense analysis reports with business deduction tracking and interest payment summaries.</p>
+            </div>
+            <div class="col-md-4">
+              <div class="feature-list">
+                <ul class="list-unstyled mb-0">
+                  <li>✓ Multiple CSV format support</li>
+                  <li>✓ Automatic categorization</li>
+                  <li>✓ Business deduction tracking</li>
+                  <li>✓ Interest payment analysis</li>
+                  <li>✓ Professional reporting</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Upload Section -->
+        <div class="p-4 no-print">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="drop-zone" id="dropZone">
+                <div class="mb-3">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                    <polyline points="7,10 12,15 17,10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                </div>
+                <h5 class="mb-2">Drop CSV files here or click to select</h5>
+                <p class="text-muted mb-3">Support for multiple bank and credit card CSV formats</p>
+                <label class="btn btn-primary btn-file">
+                  Choose Files
+                  <input type="file" id="fileInput" multiple accept=".csv" style="display: none;">
+                </label>
+              </div>
+              <div id="fileList" class="mt-2"></div>
+            </div>
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="card-title mb-0">Supported Formats</h6>
+                </div>
+                <div class="card-body">
+                  <small class="text-muted">
+                    <strong>Headers detected:</strong><br>
+                    • Date, Transaction Date, Posted Date<br>
+                    • Description, Merchant<br>
+                    • Debit/Credit or Amount columns<br><br>
+                    
+                    <strong>Formats tested:</strong><br>
+                    • Chase Bank exports<br>
+                    • Citi Bank exports<br>
+                    • Credit Union exports<br>
+                    • Most standard CSV formats
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row mt-3">
+            <div class="col">
+              <button id="processBtn" class="btn btn-success btn-lg" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                  <polygon points="5,3 19,12 5,21"></polygon>
+                </svg>
+                Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Error Container -->
+        <div id="errorContainer" class="px-4"></div>
+        
+        <!-- Report Container -->
+        <div id="reportContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS for interactive features -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Compiled TypeScript/JavaScript -->
+  <script>
+    "use strict";
+    // Financial Reporting Tool - TypeScript Implementation
+    // Based on specifications for processing CSV transaction data
+    // Global category definitions
+    const CATEGORIES = [
+        '3KM',
+        'Auto',
+        'Bank Fees',
+        'Cash',
+        'Checks',
+        'Child Care and Camps',
+        'Deposits',
+        'Donations',
+        'Education',
+        'Entertainment',
+        'Fines and Tickets',
+        'Girl Scouts',
+        'Gifts',
+        'Groceries',
+        'Hardware',
+        'Health and Beauty',
+        'Health Supplements',
+        'Household',
+        'Insurance',
+        'Interest Paid',
+        'IRS',
+        'Medical and Dental Expenses',
+        'Mortgage',
+        'Office Technology',
+        'Office Supplies, Memberships & Subscriptions',
+        'Parking',
+        'Pets',
+        'Postage',
+        'Restaurants',
+        'Solar Lease',
+        'Storage',
+        'Subscriptions',
+        'Tax Return Preparation',
+        'Transfers',
+        'Travel',
+        'Unclassified',
+        'Utilities',
+        'Web Hosting',
+        'Wine, Beer, Spirits'
+    ];
+    // Business deductible categories
+    const BUSINESS_CATEGORIES = [
+        'Office Technology',
+        'Office Supplies, Memberships & Subscriptions',
+        'Web Hosting',
+        '3KM'
+    ];
+    // Keyword mappings for categorization
+    const CATEGORY_KEYWORDS = {
+        '3KM': ['3km'],
+        'Auto': ['chevron', 'shell', 'mobil', 'gas station', 'auto', 'car wash', 'oil change', 'tire', 'mechanic', 'valero', 'exxon', 'bp ', 'citgo', 'arco', 'fastrak', 'bridge toll'],
+        'Bank Fees': ['overdraft', 'annual membership fee', 'atm fee', 'maintenance fee', 'wire fee', 'foreign transaction fee'],
+        'Cash': ['cash', 'atm withdrawal'],
+        'Checks': ['check'],
+        'Child Care and Camps': ['child care', 'daycare', 'camp', 'babysit'],
+        'Deposits': ['deposit', 'payroll', 'salary', 'wages', 'income', 'direct deposit', 'tripleseat'],
+        'Donations': ['donation', 'charity', 'church', 'goodwill'],
+        'Education': ['school', 'university', 'college', 'tuition', 'education', 'srjc'],
+        'Entertainment': ['movie', 'theater', 'concert', 'entertainment', 'netflix', 'hulu', 'spotify', 'paramount'],
+        'Fines and Tickets': ['fine', 'ticket', 'violation', 'penalty'],
+        'Girl Scouts': ['girl scout'],
+        'Gifts': ['gift'],
+        'Groceries': ['safeway', 'grocery', 'whole foods', 'trader joe', 'costco', 'walmart', 'target', 'oliver', 'wholefds'],
+        'Hardware': ['home depot', 'lowes', 'hardware', 'ace hardware', 'mission ace'],
+        'Health and Beauty': ['cvs', 'walgreens', 'pharmacy', 'cosmetic', 'salon', 'spa', 'beauty'],
+        'Health Supplements': ['vitamin', 'supplement', 'gnc', 'health store', 'ryze'],
+        'Household': ['household', 'cleaning', 'laundry', 'detergent'],
+        'Insurance': ['insurance', 'protective life'],
+        'Interest Paid': ['interest', 'finance charge', 'purchase interest charge', 'interest charged'],
+        'IRS': ['irs', 'tax payment', 'internal revenue'],
+        'Medical and Dental Expenses': ['doctor', 'hospital', 'medical', 'dental', 'dentist', 'physician'],
+        'Mortgage': ['mortgage', 'us bank home mtg'],
+        'Office Technology': ['microsoft', 'adobe', 'zoom', 'google', 'apple.com', 'linkedin'],
+        'Office Supplies, Memberships & Subscriptions': ['office', 'supplies', 'membership', 'subscription', 'staples'],
+        'Parking': ['parking', 'meter', 'garage'],
+        'Pets': ['pet', 'vet', 'veterinary', 'petco', 'pet food'],
+        'Postage': ['usps', 'fedex', 'ups', 'postage', 'shipping'],
+        'Restaurants': ['restaurant', 'cafe', 'bistro', 'grill', 'pizza', 'burger', 'taco', 'chinese', 'italian', 'sushi', 'starbucks', 'dunkin', 'lepe', 'taqueria', 'ozzies', 'everest indian', 'tatte bakery', 'kelly', 'salt and stone', 'mombos pizza'],
+        'Solar Lease': ['solar', 'spruce power'],
+        'Storage': ['storage', 'storagepro'],
+        'Subscriptions': ['subscription', 'monthly', 'annual'],
+        'Tax Return Preparation': ['tax prep', 'h&r block', 'turbotax'],
+        'Transfers': ['transfer', 'payment thank you', 'ach electronic credit', 'ach deposit', 'ach withdrawal', 'redwood cu ach', 'citibank', 'mobile deposit', 'deposit transfer', 'withdrawal transfer', 'home banking transfer', 'checking plus', 'share'],
+        'Travel': ['hotel', 'airline', 'flight', 'rental car', 'uber', 'lyft', 'taxi', 'hilton', 'marriott', 'travel', 'logan expr', 'commuter rail', 'mbta'],
+        'Utilities': ['electric', 'gas', 'water', 'phone', 'internet', 'cable', 'comcast', 'pgande', 'att'],
+        'Web Hosting': ['godaddy', 'aws', 'amazon web services', 'google cloud', 'hosting'],
+        'Wine, Beer, Spirits': ['wine', 'beer', 'spirits', 'liquor', 'alcohol', 'totalwine']
+    };
+    class FinancialReporter {
+        constructor() {
+            this.allTransactions = [];
+            this.processingErrors = [];
+        }
+        // Header detection function
+        detectHeaders(headers) {
+            const mapping = {
+                dateColumn: -1,
+                descriptionColumn: -1
+            };
+            // Normalize headers to lowercase for comparison
+            const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+            // Find date column
+            for (let i = 0; i < normalizedHeaders.length; i++) {
+                const header = normalizedHeaders[i];
+                if (header.includes('date') || header === 'date') {
+                    mapping.dateColumn = i;
+                    break;
+                }
+            }
+            // Find description column
+            for (let i = 0; i < normalizedHeaders.length; i++) {
+                const header = normalizedHeaders[i];
+                if (header.includes('description') || header.includes('merchant') || header === 'description') {
+                    mapping.descriptionColumn = i;
+                    break;
+                }
+            }
+            // Find debit/credit or amount columns
+            for (let i = 0; i < normalizedHeaders.length; i++) {
+                const header = normalizedHeaders[i];
+                if (header === 'debit' || header === 'withdrawal') {
+                    mapping.debitColumn = i;
+                }
+                else if (header === 'credit' || header === 'deposit') {
+                    mapping.creditColumn = i;
+                }
+                else if (header === 'amount') {
+                    mapping.amountColumn = i;
+                }
+            }
+            return mapping;
+        }
+        // Proper CSV row parsing to handle quoted fields with commas
+        parseCSVRow(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            // Add the last field
+            result.push(current.trim());
+            
+            // Remove quotes from fields
+            return result.map(field => field.replace(/^"(.*)"$/, '$1'));
+        }
+
+        // Parse date function
+        parseDate(dateString) {
+            // Handle common date formats: MM/DD/YY, MM/DD/YYYY
+            const cleaned = dateString.trim();
+            const parts = cleaned.split('/');
+            if (parts.length === 3) {
+                let month = parseInt(parts[0]);
+                let day = parseInt(parts[1]);
+                let year = parseInt(parts[2]);
+                // Handle 2-digit years
+                if (year < 100) {
+                    year += year < 50 ? 2000 : 1900;
+                }
+                return new Date(year, month - 1, day);
+            }
+            // Fallback to Date constructor
+            return new Date(cleaned);
+        }
+        // Categorization function
+        categorizeTransaction(description) {
+            const lowerDesc = description.toLowerCase();
+            // Process categories in order - first match wins
+            for (const category of CATEGORIES) {
+                const keywords = CATEGORY_KEYWORDS[category] || [];
+                for (const keyword of keywords) {
+                    if (lowerDesc.includes(keyword.toLowerCase())) {
+                        return category;
+                    }
+                }
+            }
+            return 'Unclassified';
+        }
+        // Parse CSV function
+        parseCSVData(csvContent, filename) {
+            const lines = csvContent.trim().split('\n');
+            const result = {
+                transactions: [],
+                errors: [],
+                skippedRows: 0,
+                totalRows: lines.length
+            };
+            if (lines.length < 2) {
+                result.errors.push(`File ${filename}: No data rows found`);
+                return result;
+            }
+            // Parse headers  
+            const headers = this.parseCSVRow(lines[0]);
+            console.log(`📋 CSV HEADERS for ${filename}:`, headers);
+            const mapping = this.detectHeaders(headers);
+            console.log(`🗂️ HEADER MAPPING for ${filename}:`, mapping);
+            // Validate required columns
+            if (mapping.dateColumn === -1 || mapping.descriptionColumn === -1) {
+                result.errors.push(`File ${filename}: Could not detect required Date and Description columns`);
+                return result;
+            }
+            if (!mapping.debitColumn && !mapping.creditColumn && !mapping.amountColumn) {
+                result.errors.push(`File ${filename}: Could not detect amount columns (Debit/Credit or Amount)`);
+                return result;
+            }
+            // Process data rows
+            for (let i = 1; i < lines.length; i++) {
+                try {
+                    // Proper CSV parsing to handle quoted fields with commas
+                const row = this.parseCSVRow(lines[i]);
+                    if (row.length < headers.length) {
+                        console.log(`⚠️ SKIPPED ROW ${i + 1}: Too few columns (${row.length} vs ${headers.length})`);
+                        result.skippedRows++;
+                        continue;
+                    }
+                    const date = this.parseDate(row[mapping.dateColumn]);
+                    const description = row[mapping.descriptionColumn];
+                    
+                    // Check if this row contains our target amount before validation
+                    const rowText = row.join(',');
+                    if (rowText.includes('9431.67')) {
+                        console.log(`🎯 ROW WITH TARGET AMOUNT: Row ${i + 1}:`, row);
+                        console.log(`📅 Date parse result:`, date, 'Valid:', !isNaN(date.getTime()));
+                        console.log(`📝 Description:`, description, 'Valid:', !!description);
+                    }
+                    
+                    if (isNaN(date.getTime()) || !description) {
+                        if (rowText.includes('9431.67')) {
+                            console.log(`❌ TARGET ROW SKIPPED: Invalid date or description`);
+                        }
+                        result.skippedRows++;
+                        continue;
+                    }
+                    let debit = 0;
+                    let credit = 0;
+                    // Handle different column formats
+                    if (mapping.debitColumn !== undefined && mapping.creditColumn !== undefined) {
+                        // Separate debit/credit columns
+                        const debitStr = row[mapping.debitColumn] || '0';
+                        const creditStr = row[mapping.creditColumn] || '0';
+                        debit = Math.abs(parseFloat(debitStr.replace(/[^-\d.]/g, '')) || 0);
+                        credit = Math.abs(parseFloat(creditStr.replace(/[^-\d.]/g, '')) || 0);
+                    }
+                    else if (mapping.amountColumn !== undefined) {
+                        // Single amount column with +/- values
+                        const amountStr = row[mapping.amountColumn];
+                        const cleanAmount = amountStr.replace(/[^-\d.]/g, '');
+                        const amount = parseFloat(cleanAmount) || 0;
+                        
+                        // Enhanced debug for the target amount
+                        if (rowText.includes('9431.67')) {
+                            console.log(`🎯 TARGET AMOUNT PARSING: "${amountStr}" -> "${cleanAmount}" -> ${amount}`);
+                        }
+                        
+                        // Debug logging for large amounts
+                        if (Math.abs(amount) > 5000) {
+                            console.log(`💰 CSV PARSE DEBUG: "${description}" Amount: ${amountStr} -> Parsed: ${amount}`);
+                        }
+                        
+                        if (amount < 0) {
+                            debit = Math.abs(amount);
+                        }
+                        else {
+                            credit = amount;
+                        }
+                    }
+                    const category = this.categorizeTransaction(description);
+                    const isLargeExpense = debit > 200;
+                    const transaction = {
+                        date,
+                        description,
+                        debit,
+                        credit,
+                        category,
+                        isLargeExpense
+                    };
+                    
+                    // Debug logging for interest transactions
+                    if (description.toLowerCase().includes('interest')) {
+                        console.log(`🔍 INTEREST DEBUG: "${description}" -> Category: "${category}", Debit: ${debit}`);
+                    }
+                    
+                    // Debug logging for the specific transaction we're looking for
+                    if (Math.abs(credit - 9431.67) < 0.01 || Math.abs(debit - 9431.67) < 0.01) {
+                        console.log(`🎯 FOUND TARGET TRANSACTION:`, {
+                            description,
+                            debit,
+                            credit,
+                            category,
+                            date: date.toLocaleDateString()
+                        });
+                    }
+                    
+                    // Debug logging for all large transactions
+                    if (credit > 5000 || debit > 5000) {
+                        console.log(`💰 LARGE TRANSACTION: "${description}" Credit: ${credit}, Debit: ${debit}, Category: ${category}`);
+                    }
+                    
+                    result.transactions.push(transaction);
+                }
+                catch (error) {
+                    result.errors.push(`File ${filename}, row ${i + 1}: ${error}`);
+                    result.skippedRows++;
+                }
+            }
+            return result;
+        }
+        // Calculate totals function
+        calculateTotals(transactions) {
+            const totals = {};
+            for (const transaction of transactions) {
+                const category = transaction.category;
+                if (!totals[category]) {
+                    totals[category] = {
+                        debitTotal: 0,
+                        creditTotal: 0,
+                        netAmount: 0,
+                        transactionCount: 0
+                    };
+                }
+                totals[category].debitTotal += transaction.debit;
+                totals[category].creditTotal += transaction.credit;
+                totals[category].netAmount += transaction.credit - transaction.debit;
+                totals[category].transactionCount++;
+            }
+            return totals;
+        }
+        // Utility functions
+        formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+        sortTransactionsByDate(transactions) {
+            return transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+        }
+        getDateRange(transactions) {
+            if (transactions.length === 0)
+                return '';
+            const sorted = this.sortTransactionsByDate([...transactions]);
+            const startDate = sorted[0].date.toLocaleDateString();
+            const endDate = sorted[sorted.length - 1].date.toLocaleDateString();
+            return startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+        }
+        // Report generation functions
+        generateSummaryHTML(totals) {
+            let totalDebits = 0;
+            let totalCredits = 0;
+            let transferAmount = 0;
+            
+            // Exclude transfers from totals
+            for (const [category, categoryTotal] of Object.entries(totals)) {
+                if (category !== 'Transfers') {
+                    totalDebits += categoryTotal.debitTotal;
+                    totalCredits += categoryTotal.creditTotal;
+                } else {
+                    transferAmount = categoryTotal.creditTotal - categoryTotal.debitTotal;
+                }
+            }
+            const netAmount = totalCredits - totalDebits;
+            
+            // Debug info
+            const categoryCount = Object.keys(totals).length;
+            const totalTransactions = Object.values(totals).reduce((sum, cat) => sum + cat.transactionCount, 0);
+            
+            return `
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title mb-0">Executive Summary</h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3">
+                  <h5>Total Expenses</h5>
+                  <p class="h4 text-danger">${this.formatCurrency(totalDebits)}</p>
+                </div>
+                <div class="col-md-3">
+                  <h5>Total Income</h5>
+                  <p class="h4 text-success">${this.formatCurrency(totalCredits)}</p>
+                </div>
+                <div class="col-md-3">
+                  <h5>Net Amount</h5>
+                  <p class="h4 ${netAmount >= 0 ? 'text-success' : 'text-danger'}">${this.formatCurrency(netAmount)}</p>
+                </div>
+                <div class="col-md-3">
+                  <h5>Debug Info</h5>
+                  <p class="h6 text-muted">${totalTransactions} transactions<br>${categoryCount} categories</p>
+                  ${transferAmount !== 0 ? `<p class="small text-info">Transfers: ${this.formatCurrency(transferAmount)}</p>` : ''}
+                </div>
+              </div>
+              
+              <div class="row mt-3">
+                <div class="col-12">
+                  <div class="collapse" id="debugCollapse">
+                    <div class="card card-body bg-dark text-light small">
+                      <strong>🐛 DEBUG MODE - Category Breakdown:</strong><br>
+                      ${Object.entries(totals).map(([cat, total]) => 
+                        `${cat}: ${total.transactionCount} txns, ${this.formatCurrency(total.debitTotal)} expenses, ${this.formatCurrency(total.creditTotal)} income`
+                      ).join('<br>')}
+                    </div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-secondary mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#debugCollapse">
+                    🐛 Toggle Debug Info
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        }
+        generateInterestSummaryHTML(transactions) {
+            const interestTransactions = transactions.filter(t => t.category === 'Interest Paid');
+            
+            // Debug: Check for potential interest transactions that might be miscategorized
+            const potentialInterest = transactions.filter(t => 
+                t.description.toLowerCase().includes('interest') || 
+                t.description.toLowerCase().includes('finance charge') ||
+                t.description.toLowerCase().includes('purchase interest')
+            );
+            
+            if (interestTransactions.length === 0) {
+                // Show debug info if there are potential interest transactions but none categorized
+                if (potentialInterest.length > 0) {
+                    return `
+                      <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                          <h3 class="card-title mb-0">Interest Paid Summary</h3>
+                        </div>
+                        <div class="card-body">
+                          <div class="alert alert-info">
+                            <strong>Debug:</strong> Found ${potentialInterest.length} potential interest transactions that may need manual review:
+                            <ul>
+                              ${potentialInterest.map(t => `
+                                <li>${t.date.toLocaleDateString()} - ${t.description} - ${this.formatCurrency(t.debit)} (Category: ${t.category})</li>
+                              `).join('')}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                }
+                return '';
+            }
+            const totalInterest = interestTransactions.reduce((sum, t) => sum + t.debit, 0);
+            return `
+          <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+              <h3 class="card-title mb-0">Interest Paid Summary</h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h5>Total Interest Paid</h5>
+                  <p class="h4 text-danger">${this.formatCurrency(totalInterest)}</p>
+                </div>
+                <div class="col-md-6">
+                  <h5>Number of Charges</h5>
+                  <p class="h4">${interestTransactions.length}</p>
+                </div>
+              </div>
+              <h6>Interest Transactions:</h6>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th class="text-end">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${interestTransactions.map(t => `
+                      <tr>
+                        <td>${t.date.toLocaleDateString()}</td>
+                        <td>${t.description}</td>
+                        <td class="text-end text-danger">${this.formatCurrency(t.debit)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+        }
+        generateIncomeBreakdownHTML(transactions) {
+            console.log('🔍 ALL TRANSACTIONS DEBUG:', transactions.length, 'total transactions');
+            
+            // Debug: Find any transactions with 9431.67
+            const targetAmount = 9431.67;
+            const targetTransactions = transactions.filter(t => 
+                Math.abs(t.credit - targetAmount) < 0.01 || Math.abs(t.debit - targetAmount) < 0.01
+            );
+            if (targetTransactions.length > 0) {
+                console.log(`🎯 FOUND $${targetAmount} TRANSACTIONS:`, targetTransactions);
+            }
+            
+            const incomeTransactions = transactions.filter(t => t.credit > 0 && t.category !== 'Transfers');
+            console.log('💰 INCOME TRANSACTIONS:', incomeTransactions.length, 'found');
+            
+            // Log all income transactions over $1000
+            incomeTransactions.filter(t => t.credit > 1000).forEach(t => {
+                console.log(`💵 Large income: $${t.credit} - "${t.description}" (Category: ${t.category})`);
+            });
+            
+            if (incomeTransactions.length === 0) {
+                return '';
+            }
+            
+            // Group income by source type - with debug logging
+            const tripleseatTransactions = incomeTransactions.filter(t => 
+                t.description.toLowerCase().includes('tripleseat')
+            );
+            
+            const consultingTransactions = incomeTransactions.filter(t => {
+                const desc = t.description.toLowerCase();
+                const isCheckDeposit = desc.includes('deposit by check') || 
+                                      desc.includes('check received') ||
+                                      desc.includes('check hold release');
+                const isLargeMobileDeposit = desc.includes('mobile deposit') && t.credit > 5000;
+                const isLargeDeposit = desc.includes('deposit') && t.credit > 5000 && !desc.includes('tripleseat');
+                
+                const isConsulting = isCheckDeposit || isLargeMobileDeposit || isLargeDeposit;
+                
+                // Debug logging for high-value transactions
+                if (t.credit > 1000) {
+                    console.log(`💰 INCOME DEBUG: "${t.description}" ($${t.credit}) -> Consulting: ${isConsulting}`);
+                    console.log(`  - Check deposit keywords: ${isCheckDeposit}`);
+                    console.log(`  - Large mobile deposit: ${isLargeMobileDeposit}`);
+                    console.log(`  - Large deposit: ${isLargeDeposit}`);
+                }
+                
+                return isConsulting;
+            });
+            
+            const otherIncomeTransactions = incomeTransactions.filter(t => 
+                !tripleseatTransactions.includes(t) &&
+                !consultingTransactions.includes(t)
+            );
+            
+            const totalTripleseat = tripleseatTransactions.reduce((sum, t) => sum + t.credit, 0);
+            const totalConsulting = consultingTransactions.reduce((sum, t) => sum + t.credit, 0);
+            const totalOtherIncome = otherIncomeTransactions.reduce((sum, t) => sum + t.credit, 0);
+            const totalIncome = totalTripleseat + totalConsulting + totalOtherIncome;
+            
+            return `
+          <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+              <h3 class="card-title mb-0">Income Breakdown</h3>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <h5>Total Income</h5>
+                  <p class="h4 text-success">${this.formatCurrency(totalIncome)}</p>
+                </div>
+                <div class="col-md-3">
+                  <h5>Consulting</h5>
+                  <p class="h4 text-warning">${this.formatCurrency(totalConsulting)}</p>
+                  <small class="text-muted">${consultingTransactions.length} deposits</small>
+                </div>
+                <div class="col-md-3">
+                  <h5>Tripleseat Salary</h5>
+                  <p class="h4 text-primary">${this.formatCurrency(totalTripleseat)}</p>
+                  <small class="text-muted">${tripleseatTransactions.length} deposits</small>
+                </div>
+                <div class="col-md-3">
+                  <h5>Other Income</h5>
+                  <p class="h4 text-info">${this.formatCurrency(totalOtherIncome)}</p>
+                  <small class="text-muted">${otherIncomeTransactions.length} items</small>
+                </div>
+              </div>
+              
+              ${consultingTransactions.length > 0 ? `
+                <h6>Consulting Income:</h6>
+                <div class="table-responsive mb-3">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${consultingTransactions.map(t => `
+                        <tr class="table-warning">
+                          <td>${t.date.toLocaleDateString()}</td>
+                          <td>${t.description}</td>
+                          <td class="text-end text-success fw-bold">${this.formatCurrency(t.credit)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+              
+              ${tripleseatTransactions.length > 0 ? `
+                <h6>Tripleseat Deposits:</h6>
+                <div class="table-responsive mb-3">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${tripleseatTransactions.map(t => `
+                        <tr>
+                          <td>${t.date.toLocaleDateString()}</td>
+                          <td>${t.description}</td>
+                          <td class="text-end text-success">${this.formatCurrency(t.credit)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+              
+              ${otherIncomeTransactions.length > 0 ? `
+                <h6>Other Income Sources:</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${otherIncomeTransactions.map(t => `
+                        <tr>
+                          <td>${t.date.toLocaleDateString()}</td>
+                          <td>${t.description}</td>
+                          <td class="text-end text-success">${this.formatCurrency(t.credit)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        }
+        
+        generateBusinessDeductionsHTML(transactions, totals) {
+            const businessTransactions = transactions.filter(t => BUSINESS_CATEGORIES.includes(t.category));
+            if (businessTransactions.length === 0) {
+                return '';
+            }
+            const totalDeductions = BUSINESS_CATEGORIES.reduce((sum, category) => {
+                var _a;
+                return sum + (((_a = totals[category]) === null || _a === void 0 ? void 0 : _a.debitTotal) || 0);
+            }, 0);
+            return `
+          <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+              <h3 class="card-title mb-0">Business Deductions</h3>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <h5>Total Business Deductions</h5>
+                  <p class="h4 text-success">${this.formatCurrency(totalDeductions)}</p>
+                </div>
+              </div>
+              
+              <h6>By Category:</h6>
+              <div class="row">
+                ${BUSINESS_CATEGORIES.map(category => {
+                const categoryTotal = totals[category];
+                if (!categoryTotal || categoryTotal.debitTotal === 0)
+                    return '';
+                return `
+                    <div class="col-md-6 mb-2">
+                      <strong>${category}:</strong> ${this.formatCurrency(categoryTotal.debitTotal)}
+                    </div>
+                  `;
+            }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+        }
+        generateCategorySummaryHTML(totals) {
+            const sortedCategories = Object.entries(totals)
+                .filter(([category, total]) => total.debitTotal > 0 || total.creditTotal > 0)
+                .sort(([a], [b]) => a.localeCompare(b));
+            return `
+          <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+              <h3 class="card-title mb-0">Category Summary</h3>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th class="text-end">Expenses</th>
+                      <th class="text-end">Income</th>
+                      <th class="text-end">Net</th>
+                      <th class="text-end">Transactions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${sortedCategories.map(([category, total]) => `
+                      <tr>
+                        <td><a href="#category-${category.replace(/\s+/g, '-').toLowerCase()}">${category}</a></td>
+                        <td class="text-end ${total.debitTotal > 0 ? 'text-danger' : ''}">${total.debitTotal > 0 ? this.formatCurrency(total.debitTotal) : '-'}</td>
+                        <td class="text-end ${total.creditTotal > 0 ? 'text-success' : ''}">${total.creditTotal > 0 ? this.formatCurrency(total.creditTotal) : '-'}</td>
+                        <td class="text-end ${total.netAmount >= 0 ? 'text-success' : 'text-danger'}">${this.formatCurrency(total.netAmount)}</td>
+                        <td class="text-end">${total.transactionCount}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+        }
+        generateCategoryDetailHTML(category, transactions) {
+            if (transactions.length === 0)
+                return '';
+            const sortedTransactions = this.sortTransactionsByDate(transactions);
+            const categoryId = category.replace(/\s+/g, '-').toLowerCase();
+            return `
+          <div class="card mb-4" id="category-${categoryId}">
+            <div class="card-header">
+              <h4 class="card-title mb-0">${category}</h4>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th class="text-end">Debit</th>
+                      <th class="text-end">Credit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${sortedTransactions.map(t => `
+                      <tr ${t.isLargeExpense ? 'class="fw-bold"' : ''}>
+                        <td>${t.date.toLocaleDateString()}</td>
+                        <td>${t.description}</td>
+                        <td class="text-end ${t.debit > 0 ? 'text-danger' : ''}">${t.debit > 0 ? this.formatCurrency(t.debit) : '-'}</td>
+                        <td class="text-end ${t.credit > 0 ? 'text-success' : ''}">${t.credit > 0 ? this.formatCurrency(t.credit) : '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3">
+                <a href="#category-summary" class="btn btn-sm btn-outline-primary">← Back to Summary</a>
+              </div>
+            </div>
+          </div>
+        `;
+        }
+        // Main report generation function - modified to render inline
+        generateReportInline() {
+            if (this.allTransactions.length === 0) {
+                return '<div class="alert alert-warning">No transactions to report.</div>';
+            }
+            const totals = this.calculateTotals(this.allTransactions);
+            const dateRange = this.getDateRange(this.allTransactions);
+            // Group transactions by category
+            const transactionsByCategory = {};
+            for (const transaction of this.allTransactions) {
+                if (!transactionsByCategory[transaction.category]) {
+                    transactionsByCategory[transaction.category] = [];
+                }
+                transactionsByCategory[transaction.category].push(transaction);
+            }
+            return `
+              <div class="container-fluid py-4">
+                <div class="row">
+                  <div class="col-12">
+                    <h1 class="text-center mb-4">Financial Report</h1>
+                    <p class="text-center text-muted mb-4">Date Range: ${dateRange}</p>
+                    
+                    ${this.generateSummaryHTML(totals)}
+                    ${this.generateIncomeBreakdownHTML(this.allTransactions)}
+                    ${this.generateInterestSummaryHTML(this.allTransactions)}
+                    ${this.generateBusinessDeductionsHTML(this.allTransactions, totals)}
+                    
+                    <div id="category-summary">
+                      ${this.generateCategorySummaryHTML(totals)}
+                    </div>
+                    
+                    <h2>Transaction Details</h2>
+                    ${Object.entries(transactionsByCategory)
+                .filter(([category, transactions]) => transactions.length > 0)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([category, transactions]) => this.generateCategoryDetailHTML(category, transactions))
+                .join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+        }
+        // Generate standalone report
+        generateReport() {
+            if (this.allTransactions.length === 0) {
+                return '<div class="alert alert-warning">No transactions to report.</div>';
+            }
+            const totals = this.calculateTotals(this.allTransactions);
+            const dateRange = this.getDateRange(this.allTransactions);
+            // Group transactions by category
+            const transactionsByCategory = {};
+            for (const transaction of this.allTransactions) {
+                if (!transactionsByCategory[transaction.category]) {
+                    transactionsByCategory[transaction.category] = [];
+                }
+                transactionsByCategory[transaction.category].push(transaction);
+            }
+            return `
+              <!DOCTYPE html>
+              <html lang="en">
+              <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Financial Report - ${dateRange}</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                <style>
+                  @media print {
+                    .no-print { display: none !important; }
+                  }
+                  body { font-size: 14px; }
+                  .card-title { font-size: 1.1rem; }
+                </style>
+              </head>
+              <body>
+                <div class="container-fluid py-4">
+                  <div class="row">
+                    <div class="col-12">
+                      <h1 class="text-center mb-4">Financial Report</h1>
+                      <p class="text-center text-muted mb-4">Date Range: ${dateRange}</p>
+                      
+                      ${this.generateSummaryHTML(totals)}
+                      ${this.generateIncomeBreakdownHTML(this.allTransactions)}
+                      ${this.generateInterestSummaryHTML(this.allTransactions)}
+                      ${this.generateBusinessDeductionsHTML(this.allTransactions, totals)}
+                      
+                      <div id="category-summary">
+                        ${this.generateCategorySummaryHTML(totals)}
+                      </div>
+                      
+                      <h2>Transaction Details</h2>
+                      ${Object.entries(transactionsByCategory)
+                .filter(([category, transactions]) => transactions.length > 0)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([category, transactions]) => this.generateCategoryDetailHTML(category, transactions))
+                .join('')}
+                    </div>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `;
+        }
+        // Public method to process files
+        processFiles(files) {
+            return new Promise((resolve, reject) => {
+                this.allTransactions = [];
+                this.processingErrors = [];
+                let filesProcessed = 0;
+                const totalFiles = files.length;
+                if (totalFiles === 0) {
+                    reject(new Error('No files provided'));
+                    return;
+                }
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        var _a;
+                        try {
+                            console.log(`📁 Starting to process file: ${file.name} (${file.size} bytes)`);
+                            const content = (_a = e.target) === null || _a === void 0 ? void 0 : _a.result;
+                            
+                            if (!content) {
+                                throw new Error('File appears to be empty or unreadable');
+                            }
+                            
+                            const result = this.parseCSVData(content, file.name);
+                            console.log(`✅ File ${file.name}: ${result.transactions.length} transactions, ${result.skippedRows} skipped, ${result.errors.length} errors`);
+                            
+                            this.allTransactions.push(...result.transactions);
+                            this.processingErrors.push(...result.errors);
+                            filesProcessed++;
+                            if (filesProcessed === totalFiles) {
+                                resolve();
+                            }
+                        }
+                        catch (error) {
+                            console.error(`❌ Error processing ${file.name}:`, error);
+                            this.processingErrors.push(`❌ Error processing ${file.name}: ${error.message || error}`);
+                            filesProcessed++;
+                            if (filesProcessed === totalFiles) {
+                                resolve();
+                            }
+                        }
+                    };
+                    reader.onerror = (e) => {
+                        console.error(`❌ File read error for ${file.name}:`, e);
+                        this.processingErrors.push(`❌ Failed to read file ${file.name}: File may be corrupted, too large, or in an unsupported format`);
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            resolve();
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        }
+        getErrors() {
+            return this.processingErrors;
+        }
+    }
+    // Global instance
+    let reporter;
+    // Initialize the application
+    function initializeApp() {
+        reporter = new FinancialReporter();
+        setupUI();
+    }
+    // UI Setup
+    function setupUI() {
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const processBtn = document.getElementById('processBtn');
+        const reportContainer = document.getElementById('reportContainer');
+        const errorContainer = document.getElementById('errorContainer');
+        // File input change handler
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                updateFileList(files);
+                processBtn.disabled = false;
+            }
+        });
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-primary', 'bg-light');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-light');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            var _a;
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-light');
+            const files = (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.files;
+            if (files && files.length > 0) {
+                // Set files to input element
+                fileInput.files = files;
+                updateFileList(files);
+                processBtn.disabled = false;
+            }
+        });
+        // Process button handler
+        processBtn.addEventListener('click', async () => {
+            const files = fileInput.files;
+            if (!files || files.length === 0)
+                return;
+            processBtn.disabled = true;
+            processBtn.textContent = 'Processing...';
+            errorContainer.innerHTML = '';
+            reportContainer.innerHTML = '';
+            try {
+                await reporter.processFiles(files);
+                // Display errors/debug info
+                const errors = reporter.getErrors();
+                const debugInfo = [];
+                
+                // Build debug summary
+                const totals = reporter.calculateTotals(reporter.allTransactions);
+                const interestTxns = reporter.allTransactions.filter(t => t.category === 'Interest Paid');
+                const potentialInterest = reporter.allTransactions.filter(t => 
+                    t.description.toLowerCase().includes('interest') || 
+                    t.description.toLowerCase().includes('finance charge')
+                );
+                
+                debugInfo.push(`📁 Files processed: ${files.length}`);
+                debugInfo.push(`📊 Total transactions: ${reporter.allTransactions.length}`);
+                debugInfo.push(`🏷️ Categories found: ${Object.keys(totals).length}`);
+                debugInfo.push(`💸 Interest transactions: ${interestTxns.length} properly categorized, ${potentialInterest.length - interestTxns.length} potential missed`);
+                debugInfo.push(`⚠️ Processing errors: ${errors.length}`);
+                if (reporter.allTransactions.length > 0) {
+                    debugInfo.push(`💰 Largest expense: $${Math.max(...reporter.allTransactions.map(t => t.debit)).toFixed(2)}`);
+                    debugInfo.push(`💵 Largest income: $${Math.max(...reporter.allTransactions.map(t => t.credit)).toFixed(2)}`);
+                }
+                
+                if (errors.length > 0 || debugInfo.length > 0) {
+                    errorContainer.innerHTML = `
+              ${errors.length > 0 ? `
+                <div class="alert alert-warning">
+                  <h5>⚠️ Processing Warnings:</h5>
+                  <ul>
+                    ${errors.map(error => `<li>${error}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              
+              <div class="alert alert-info">
+                <h5>🐛 Processing Debug Log:</h5>
+                <ul>
+                  ${debugInfo.map(info => `<li>${info}</li>`).join('')}
+                </ul>
+                <small class="text-muted">💡 Check browser console (F12) for detailed transaction logs</small>
+              </div>
+            `;
+                }
+                // Generate and display report inline
+                const reportHTML = reporter.generateReportInline();
+                reportContainer.innerHTML = reportHTML;
+                
+                // Debug output to console
+                console.log('🐛 DEBUG - Processing completed!');
+                console.log(`📊 Total transactions processed: ${reporter.allTransactions.length}`);
+                console.log('🏷️ Category breakdown:', reporter.calculateTotals(reporter.allTransactions));
+                console.log('📝 All transactions:', reporter.allTransactions);
+                
+                const finalInterestTxns = reporter.allTransactions.filter(t => t.category === 'Interest Paid');
+                console.log(`💸 Interest transactions found: ${finalInterestTxns.length}`, finalInterestTxns);
+            }
+            catch (error) {
+                errorContainer.innerHTML = `
+            <div class="alert alert-danger">
+              <h5>Error:</h5>
+              <p>${error}</p>
+            </div>
+          `;
+            }
+            finally {
+                processBtn.disabled = false;
+                processBtn.textContent = 'Generate Report';
+            }
+        });
+    }
+    function updateFileList(files) {
+        const fileList = document.getElementById('fileList');
+        const fileNames = Array.from(files).map(f => f.name).join(', ');
+        fileList.innerHTML = `<small class="text-muted">Selected files: ${fileNames}</small>`;
+    }
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+</body>
+</html>
